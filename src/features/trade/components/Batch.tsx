@@ -44,7 +44,7 @@ export const Batch: React.FC<BatchProps> = ({
         onSuccess: (batchId) => {
             queryClient.invalidateQueries({ queryKey: ['batches'] });
             queryClient.invalidateQueries({ queryKey: ['accounts'] });
-            queryClient.invalidateQueries({ queryKey: ['units'] });
+            queryClient.invalidateQueries({ queryKey: ['active-units'] });
             onDeleteBatch(batchId);
         }
     });

@@ -52,7 +52,7 @@ export const BatchAccordion: React.FC<BatchAccordionProps> = ({
 
     const handleCloseUnit = (unitId: string) => {
         closeUnitMutation.mutateAsync(unitId).then(() => {
-            queryClient.invalidateQueries({ queryKey: ['units'] });
+            queryClient.invalidateQueries({ queryKey: ['active-units'] });
         });
     };
 

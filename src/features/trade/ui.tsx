@@ -50,7 +50,7 @@ export const Trade = () => {
     const handleDeleteBatch = () => {
         queryClient.invalidateQueries({ queryKey: ['batches'] });
         queryClient.invalidateQueries({ queryKey: ['accounts'] });
-        queryClient.invalidateQueries({ queryKey: ['units'] });
+        queryClient.invalidateQueries({ queryKey: ['active-units'] });
     };
 
     const handleCreateUnit = (batchId: string) => {
