@@ -1,6 +1,6 @@
 import React from 'react';
 import { Batch } from './Batch';
-import type { BatchDto, UnitDto, IntegrationAccountDto } from '../../../api';
+import type { BatchDto, IntegrationAccountDto } from '../../../api';
 
 interface BatchesListProps {
     batches: BatchDto[];
