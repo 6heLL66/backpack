@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import {
     Table,
     TableHeader,
@@ -10,24 +10,33 @@ import {
     Button,
     Select,
     SelectItem,
+    Spinner,
+    Tooltip
 } from '@heroui/react';
 import type { OrderHistoryDto } from '../../../api/models/OrderHistoryDto';
+import type { PaginatedResponseDto_OrderHistoryDto_ } from '../../../api/models/PaginatedResponseDto_OrderHistoryDto_';
 import { formatDate } from '../../../utils';
 import { OrderSide } from '../../../api';
 
 interface UnitHistoryTableProps {
-    history: OrderHistoryDto[];
+    paginatedData: PaginatedResponseDto_OrderHistoryDto_ | undefined;
     isLoading?: boolean;
+    onPageChange: (page: number) => void;
+    onItemsPerPageChange: (itemsPerPage: number) => void;
+    currentPage: number;
+    itemsPerPage: number;
 }
 
 const ITEMS_PER_PAGE_OPTIONS = [10, 25, 50, 100];
 
 export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
-    history,
-    isLoading = false
+    paginatedData,
+    isLoading = false,
+    onPageChange,
+    onItemsPerPageChange,
+    currentPage,
+    itemsPerPage
 }) => {
-    const [page, setPage] = useState(1);
-    const [itemsPerPage, setItemsPerPage] = useState(25);
 
     const handleCopyId = async (id: string) => {
         try {
@@ -39,7 +48,7 @@ export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
 
     const columns = [
         { name: 'ACTION', uid: 'action' },
-        { name: 'ACCOUNT ID', uid: 'account_id' },
+        { name: 'IDS', uid: 'account_id' },
         { name: 'SIZE', uid: 'size' },
         { name: 'PRICE', uid: 'price' },
         { name: 'SIDE', uid: 'side' },
@@ -102,21 +111,20 @@ export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
                 return (
                     <div className="flex flex-col">
                         <div className="flex items-center gap-2">
-                            <span className="text-gray-300 font-semibold font-mono">
-                                {item.account_id || 'N/A'}
+                            <span className="text-gray-300 font-mono text-sm">
+                                {item.account_id ? item.account_id : 'N/A'}
                             </span>
-                            <Button
-                                size="sm"
-                                variant="light"
-                                className="min-w-0 p-1 h-6 text-gray-400 hover:text-gray-300"
-                                onPress={() => handleCopyId(item.account_id)}
+                            <button
+                                onClick={() => handleCopyId(item.account_id)}
+                                className="p-1 rounded hover:bg-gray-700/50 transition-colors group"
+                                title="Copy Account ID"
                             >
-                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 text-gray-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                                 </svg>
-                            </Button>
+                            </button>
                         </div>
-                        <span className="text-gray-500 text-xs">Account ID</span>
+                        <span className="text-gray-500 text-xs mt-1">Account ID</span>
                     </div>
                 );
             case 'size':
@@ -132,7 +140,7 @@ export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
                 return (
                     <div className="flex flex-col">
                         <span className="text-gray-300">
-                            {item.order?.price || 'Market'}
+                            {item.order?.price || 'N/A'}
                         </span>
                         <span className="text-gray-500 text-xs">Price</span>
                     </div>
@@ -158,7 +166,29 @@ export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
                 return (
                     <div className="flex flex-col">
                         {item.error ? (
-                            <span className="text-red-400 text-xs">Failed</span>
+                            <Tooltip
+                                content={
+                                    <div className="max-w-md p-2">
+                                        <div className="flex items-start gap-2">
+                                            <svg className="w-3 h-3 text-orange-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                                            </svg>
+                                            <div className="text-gray-100 text-xs leading-relaxed whitespace-pre-wrap">
+                                                {item.error}
+                                            </div>
+                                        </div>
+                                    </div>
+                                }
+                                placement="top"
+                                classNames={{
+                                    content: "bg-gray-800/95 border border-gray-600/50 shadow-xl backdrop-blur-sm"
+                                }}
+                                showArrow
+                            >
+                                <span className="text-orange-400 text-xs cursor-help hover:text-orange-300 transition-colors">
+                                    Failed
+                                </span>
+                            </Tooltip>
                         ) : (
                             <span className="text-green-400 text-xs">Success</span>
                         )}
@@ -177,71 +207,44 @@ export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
         }
     };
 
-    const paginatedHistory = useMemo(() => {
-        const startIndex = (page - 1) * itemsPerPage;
-        const endIndex = startIndex + itemsPerPage;
-        return history.slice(startIndex, endIndex);
-    }, [history, page, itemsPerPage]);
-
-    const totalPages = Math.ceil(history.length / itemsPerPage);
+    const history = paginatedData?.items || [];
+    const totalCount = paginatedData?.count || 0;
+    const totalPages = Math.ceil(totalCount / itemsPerPage);
 
     const onNextPage = () => {
-        if (page < totalPages) {
-            setPage(page + 1);
+        if (currentPage < totalPages) {
+            onPageChange(currentPage + 1);
         }
     };
 
     const onPreviousPage = () => {
-        if (page > 1) {
-            setPage(page - 1);
+        if (currentPage > 1) {
+            onPageChange(currentPage - 1);
         }
     };
 
-    if (isLoading) {
-        return (
-            <div className="w-full">
-                <div className="animate-pulse space-y-4">
-                    {[...Array(5)].map((_, index) => (
-                        <div key={index} className="h-16 bg-gray-700/50 rounded-lg"></div>
-                    ))}
-                </div>
-            </div>
-        );
-    }
-
-    if (!history || history.length === 0) {
-        return (
-            <div className="bg-gradient-to-r from-gray-800/50 to-gray-700/50 rounded-xl p-8 border border-gray-600/50 text-center">
-                <div className="w-16 h-16 bg-gradient-to-r from-gray-600 to-gray-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </div>
-                <p className="text-gray-300 text-lg font-medium">No history found</p>
-                <p className="text-gray-500 mt-2">This unit has no order history</p>
-            </div>
-        );
-    }
-
     return (
-        <div className="w-full">
+        <div className="w-full mt-8">
             <div className="bg-gradient-to-br from-gray-900/80 to-gray-800/80 rounded-xl border border-gray-700/50 overflow-hidden shadow-2xl">
                 <div className="bg-gradient-to-r from-gray-800/50 to-gray-700/50 px-6 py-4 border-b border-gray-700/50">
-                    <h3 className="text-lg font-semibold text-white">Unit History</h3>
+                    <div className="flex items-center gap-3">
+                        <h3 className="text-lg font-semibold text-white">Unit History</h3>
+                    </div>
                     <p className="text-gray-400 text-sm mt-1">Order history and execution details</p>
                 </div>
                 
                 <div className="flex items-center justify-between px-6 py-3 bg-gray-800/30 border-b border-gray-700/50">
                     <div className="flex items-center gap-4">
                         <span className="text-gray-400 text-sm">
-                            Showing {((page - 1) * itemsPerPage) + 1} to {Math.min(page * itemsPerPage, history.length)} of {history.length} entries
+                            Showing {((currentPage - 1) * itemsPerPage) + 1} to {Math.min(currentPage * itemsPerPage, totalCount)} of {totalCount} entries
                         </span>
                         <Select
                             size="sm"
-                            value={itemsPerPage.toString()}
-                            onChange={(e) => {
-                                setItemsPerPage(Number(e.target.value));
-                                setPage(1);
+                            selectedKeys={new Set([itemsPerPage.toString()])}
+                            onSelectionChange={(keys) => {
+                                const selectedValue = Array.from(keys)[0] as string;
+                                onItemsPerPageChange(Number(selectedValue));
+                                onPageChange(1);
                             }}
                             className="w-24"
                         >
@@ -254,33 +257,44 @@ export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
                     </div>
                 </div>
 
-                <Table
-                    aria-label="Unit history table"
-                    classNames={{
-                        wrapper: "min-h-[400px]",
-                        th: "bg-gray-800/50 text-gray-300 border-b border-gray-700/50 px-6 py-4 font-semibold",
-                        td: "border-b border-gray-700/30 px-6 py-4",
-                        tr: "hover:bg-gray-700/20 transition-colors duration-200",
-                        table: "min-w-full"
-                    }}
-                >
-                    <TableHeader columns={columns}>
-                        {(column) => (
-                            <TableColumn key={column.uid} className="text-left">
-                                {column.name}
-                            </TableColumn>
-                        )}
-                    </TableHeader>
-                    <TableBody items={paginatedHistory} emptyContent="No history found">
-                        {(item) => (
-                            <TableRow key={item.id}>
-                                {(columnKey) => (
-                                    <TableCell>{renderCell(item, columnKey)}</TableCell>
-                                )}
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                <div className="relative">
+                    <Table
+                        aria-label="Unit history table"
+                        classNames={{
+                            wrapper: "min-h-[400px]",
+                            th: "bg-gray-800/50 text-gray-300 border-b border-gray-700/50 px-6 py-4 font-semibold",
+                            td: "border-b border-gray-700/30 px-6 py-4",
+                            tr: "hover:bg-gray-700/20 transition-colors duration-200",
+                            table: "min-w-full"
+                        }}
+                    >
+                        <TableHeader columns={columns}>
+                            {(column) => (
+                                <TableColumn key={column.uid} className="text-left">
+                                    {column.name}
+                                </TableColumn>
+                            )}
+                        </TableHeader>
+                        <TableBody items={history} emptyContent="No history found">
+                            {(item) => (
+                                <TableRow key={item.id}>
+                                    {(columnKey) => (
+                                        <TableCell>{renderCell(item, columnKey)}</TableCell>
+                                    )}
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                    
+                    {isLoading && (
+                        <div className="absolute inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center">
+                            <div className="bg-gray-800/90 rounded-lg px-4 py-3 flex items-center gap-3">
+                                <Spinner size="sm" color="primary" />
+                                <span className="text-gray-200 text-sm">Updating data...</span>
+                            </div>
+                        </div>
+                    )}
+                </div>
 
                 {totalPages > 1 && (
                     <div className="flex items-center justify-between px-6 py-4 bg-gray-800/30 border-t border-gray-700/50">
@@ -289,7 +303,7 @@ export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
                                 size="sm"
                                 variant="flat"
                                 onPress={onPreviousPage}
-                                isDisabled={page === 1}
+                                isDisabled={currentPage === 1}
                                 className="bg-gray-700/50 text-gray-300 hover:bg-gray-600/50"
                             >
                                 Previous
@@ -298,7 +312,7 @@ export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
                                 size="sm"
                                 variant="flat"
                                 onPress={onNextPage}
-                                isDisabled={page === totalPages}
+                                isDisabled={currentPage === totalPages}
                                 className="bg-gray-700/50 text-gray-300 hover:bg-gray-600/50"
                             >
                                 Next
@@ -307,7 +321,7 @@ export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
                         
                         <div className="flex items-center gap-2">
                             <span className="text-gray-400 text-sm">Page</span>
-                            <span className="text-gray-300 font-medium">{page}</span>
+                            <span className="text-gray-300 font-medium">{currentPage}</span>
                             <span className="text-gray-400 text-sm">of</span>
                             <span className="text-gray-300 font-medium">{totalPages}</span>
                         </div>

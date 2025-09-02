@@ -2,7 +2,8 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
-import type { OrderHistoryDto } from "../models/OrderHistoryDto";
+import type { OrderHistoryAction } from "../models/OrderHistoryAction";
+import type { PaginatedResponseDto_OrderHistoryDto_ } from "../models/PaginatedResponseDto_OrderHistoryDto_";
 import type { UnitCreateRequestDto } from "../models/UnitCreateRequestDto";
 import type { UnitDto } from "../models/UnitDto";
 import type { CancelablePromise } from "../core/CancelablePromise";
@@ -73,22 +74,40 @@ export class DefaultService {
   }
   /**
    * Units History
-   * @returns OrderHistoryDto Successful Response
+   * @returns PaginatedResponseDto_OrderHistoryDto_ Successful Response
    * @throws ApiError
    */
   public static unitsHistoryApiBackpackUnitsHistoryGet({
     unitId,
     accountId,
+    action,
+    createdAtGte,
+    createdAtLte,
+    limit = 100,
+    offset,
+    sortedBy = "created_at",
   }: {
     unitId?: string | null;
     accountId?: string | null;
-  }): CancelablePromise<Array<OrderHistoryDto>> {
+    action?: OrderHistoryAction | null;
+    createdAtGte?: string | null;
+    createdAtLte?: string | null;
+    limit?: number;
+    offset?: number;
+    sortedBy?: "created_at" | "-created_at";
+  }): CancelablePromise<PaginatedResponseDto_OrderHistoryDto_> {
     return __request(OpenAPI, {
       method: "GET",
       url: "/api/backpack/units/history",
       query: {
         unit_id: unitId,
         account_id: accountId,
+        action: action,
+        created_at__gte: createdAtGte,
+        created_at__lte: createdAtLte,
+        limit: limit,
+        offset: offset,
+        sorted_by: sortedBy,
       },
       errors: {
         422: `Validation Error`,

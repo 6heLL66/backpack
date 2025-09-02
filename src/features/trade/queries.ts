@@ -91,12 +91,37 @@ export const useBatchOrders = (batchId: string) => {
     return {query, orders: query.data};
 }
 
-export const useUnitHistory = (unitId: string) => {
+export const useUnitHistory = (
+    unitId: string, 
+    limit: number = 25, 
+    offset: number = 0,
+    action?: string | null,
+    createdAtGte?: string | null,
+    createdAtLte?: string | null
+) => {
     const query = useQuery({
-        queryKey: ['unitHistory', unitId],
-        queryFn: () => DefaultService.unitsHistoryApiBackpackUnitsHistoryGet({ unitId }),
+        queryKey: ['unitHistory', unitId, limit, offset, action, createdAtGte, createdAtLte],
+        queryFn: () => DefaultService.unitsHistoryApiBackpackUnitsHistoryGet({ 
+            unitId, 
+            limit, 
+            offset,
+            action: action as any,
+            createdAtGte,
+            createdAtLte
+        }),
         enabled: !!unitId
     });
 
     return query;
 };
+
+export const useAccountsLeverages = () => {
+    const { data: accounts } = useAccounts();
+
+    const query = useQuery({
+        queryKey: ['accountsLeverages'],
+        queryFn: () => AccountService.accountsLeveragesApiBackpackAccountsLeveragesGet({ accountIds: accounts?.map(account => account.id) || [] })
+    });
+
+    return query;
+}

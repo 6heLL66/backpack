@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "generate-api-local": "openapi --useOptions -i http://localhost:8222/api/openapi.json -o ./src/api && npx prettier ./src/api -w",
     "generate-api": "openapi --useOptions -i https://points52-backend-fc9232d6e743.herokuapp.com/api/openapi.json -o ./src/api && npx prettier ./src/api -w"
   },
   "dependencies": {

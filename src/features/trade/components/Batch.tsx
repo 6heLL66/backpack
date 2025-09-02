@@ -5,13 +5,14 @@ import {
     CardHeader,
     Button,
     Divider,
-    User
+    Input,
+    Spinner
 } from '@heroui/react';
 import type { BatchDto, IntegrationAccountDto } from '../../../api';
 import { AccountService } from '../../../api';
 import { formatDateShort } from '../../../utils';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useBatchBalances } from '../queries';
+import { useAccountsLeverages, useBatchBalances } from '../queries';
 import { useNavigate } from 'react-router';
 
 interface BatchProps {
@@ -29,10 +30,63 @@ export const Batch: React.FC<BatchProps> = ({
 }) => {
     const queryClient = useQueryClient();
     const [isDeleting, setIsDeleting] = useState(false);
+    const [editingLeverage, setEditingLeverage] = useState<string | null>(null);
+    const [leverageValues, setLeverageValues] = useState<Record<string, number>>({});
 
     const { balances } = useBatchBalances(batch.id);
 
+    const { data: accountsLeverages = {} } = useAccountsLeverages();
+
     const navigate = useNavigate();
+
+    const updateLeveragesMutation = useMutation({
+        mutationFn: async ({ accountIds, leverage }: { accountIds: string[], leverage: number }) => {
+            await AccountService.accountsUpdateLeveragesApiBackpackAccountsLeveragesPatch({ accountIds, requestBody: { leverage } });
+        },
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: ['accountsLeverages'] });
+            setEditingLeverage(null);
+            setLeverageValues({});
+        },
+        onError: (error) => {
+            console.error('Failed to update leverage:', error);
+        }
+    });
+
+    const handleUpdateLeverage = (accountId: string, leverage: number) => {
+        updateLeveragesMutation.mutate({ accountIds: [accountId], leverage });
+    };
+
+    const handleStartEditLeverage = (accountId: string) => {
+        setEditingLeverage(accountId);
+        setLeverageValues(prev => ({
+            ...prev,
+            [accountId]: accountsLeverages[accountId] || 1
+        }));
+    };
+
+    const handleCancelEditLeverage = () => {
+        setEditingLeverage(null);
+        setLeverageValues({});
+    };
+
+    const handleLeverageChange = (accountId: string, value: string) => {
+        const numValue = parseFloat(value);
+        if (!isNaN(numValue) && numValue > 0) {
+            setLeverageValues(prev => ({
+                ...prev,
+                [accountId]: numValue
+            }));
+        }
+    };
+
+    const handleCopyToClipboard = async (text: string) => {
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch (err) {
+            console.error('Failed to copy:', err);
+        }
+    };
 
     const deleteBatchMutation = useMutation({
         mutationFn: async (batchId: string) => {
@@ -131,40 +185,143 @@ export const Batch: React.FC<BatchProps> = ({
                         </div>
                     </div>
                     <div className="space-y-3 col-span-2">
-                        <h3 className="text-sm font-medium text-gray-300 flex items-center gap-2">
-                            <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                            Accounts
-                        </h3>
                         <div className="space-y-2">
                             {batchAccounts.length > 0 ? (
-                                batchAccounts.map((account) => (
-                                    <div key={account.id} className="flex items-center gap-2 p-2 bg-gray-800/30 rounded border border-gray-700/30">
-                                        <User
-                                            name={`Account ${account.id}`}
-                                            description={account.api_key ? `API: ${account.api_key}` : 'No API key'}
-                                            avatarProps={{
-                                                src: `https://api.dicebear.com/7.x/identicon/svg?seed=${account.id}`,
-                                                className: 'w-8 h-8'
-                                            }}
-                                            classNames={{
-                                                name: 'text-gray-200 text-sm font-medium',
-                                                description: 'text-gray-500 text-xs'
-                                            }}
-                                        />
-                                        <div className="flex flex-col items-center">
-                                            <span className="text-gray-200 text-sm font-medium">
+                                <div className="grid grid-cols-1 gap-2">
+                                    <div className="grid grid-cols-4 gap-4 px-3 py-2 text-xs font-medium text-gray-400 border-b border-gray-700/30">
+                                        <div className="w-32">Account</div>
+                                        <div className="text-center">Net Equity</div>
+                                        <div className="text-center">Available</div>
+                                        <div className="text-center">Leverage</div>
+                                    </div>
+                                    {batchAccounts.map((account) => (
+                                        <div key={account.id} className="grid grid-cols-4 gap-4 items-center p-1 pl-3 bg-gray-800/30 rounded-lg border border-gray-700/30 hover:border-gray-600/50 transition-colors">
+                                            <div className="w-32 flex items-center gap-2">
+                                                <img
+                                                    src={`https://api.dicebear.com/7.x/identicon/svg?seed=${account.id}`}
+                                                    alt={`Account ${account.id}`}
+                                                    className="w-6 h-6 rounded-full flex-shrink-0"
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-gray-200 text-xs font-medium truncate">
+                                                            {account.id}
+                                                        </span>
+                                                        <button
+                                                            onClick={() => handleCopyToClipboard(account.id)}
+                                                            className="p-1 ml-2 cursor-pointer rounded hover:bg-gray-700/50 transition-colors group"
+                                                            title="Copy ID"
+                                                        >
+                                                            <svg className="w-3 h-3 text-gray-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                            </svg>
+                                                        </button>
+                                                    </div>
+                                                    {account.api_key && (
+                                                        <div className="flex items-center gap-1 mt-1">
+                                                            <span className="text-gray-500 text-xs truncate">
+                                                                {account.api_key.substring(0, 8)}...
+                                                            </span>
+                                                            <button
+                                                                onClick={() => handleCopyToClipboard(account.api_key)}
+                                                                className="p-1 ml-2 cursor-pointer rounded hover:bg-gray-700/50 transition-colors group"
+                                                                title="Copy API Key"
+                                                            >
+                                                                <svg className="w-3 h-3 text-gray-400 group-hover:text-blue-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                                                </svg>
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="text-center">
+                                                <div className="text-gray-200 text-sm font-medium">
                                                 {balances
                                                     ? parseFloat(balances[account.id].netEquity).toFixed(2) 
                                                     : '0.00'}$
-                                            </span>
-                                            <span className="text-gray-400 text-xs">
+                                                </div>
+                                            </div>
+                                            
+                                            <div className="text-center">
+                                                <div className="text-gray-400 text-sm">
                                                 {balances
                                                     ? parseFloat(balances[account.id].netEquityAvailable).toFixed(2) 
                                                     : '0.00'}$
-                                            </span>
+                                                </div>
                                         </div>
+
+                                            <div className="flex justify-center">
+                                                {editingLeverage === account.id ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <Input
+                                                            type="number"
+                                                            size="sm"
+                                                            min="1"
+                                                            max="100"
+                                                            step="0.1"
+                                                            value={leverageValues[account.id]?.toString() || ''}
+                                                            onChange={(e) => handleLeverageChange(account.id, e.target.value)}
+                                                            className="w-20"
+                                                            classNames={{
+                                                                input: "text-center text-blue-300 bg-gray-800/50 border-blue-500/30",
+                                                                inputWrapper: "bg-gray-800/50 border-blue-500/30 hover:border-blue-500/50"
+                                                            }}
+                                                            placeholder="1.0"
+                                                        />
+                                                        <Button
+                                                            size="sm"
+                                                            color="success"
+                                                            variant="flat"
+                                                            onPress={() => handleUpdateLeverage(account.id, leverageValues[account.id])}
+                                                            isDisabled={updateLeveragesMutation.isPending}
+                                                            className="min-w-0 px-2"
+                                                        >
+                                                            {updateLeveragesMutation.isPending ? (
+                                                                <Spinner size="sm" color="success" />
+                                                            ) : (
+                                                                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                                </svg>
+                                                            )}
+                                                        </Button>
+                                                        <Button
+                                                            size="sm"
+                                                            color="danger"
+                                                            variant="flat"
+                                                            onPress={handleCancelEditLeverage}
+                                                            className="min-w-0 px-2"
+                                                        >
+                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="bg-blue-500/20 text-blue-300 text-xs px-3 py-1.5 rounded-lg border border-blue-500/30 flex items-center gap-1">
+                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                                                            </svg>
+                                            {accountsLeverages[account.id] ? `${accountsLeverages[account.id]}x` : 'N/A'}
+                                                        </div>
+                                                        <Button
+                                                            size="sm"
+                                                            variant="ghost"
+                                                            onPress={() => handleStartEditLeverage(account.id)}
+                                                            className="min-w-0 px-2 text-gray-400 hover:text-gray-200"
+                                                        >
+                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                            </svg>
+                                                        </Button>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
                                     </div>
-                                ))
                             ) : (
                                 <div className="p-3 bg-gray-800/30 rounded border border-gray-700/30 text-center">
                                     <p className="text-gray-500 text-sm">No accounts associated</p>

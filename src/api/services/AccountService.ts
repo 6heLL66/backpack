@@ -2,6 +2,7 @@
 /* istanbul ignore file */
 /* tslint:disable */
 /* eslint-disable */
+import type { AccountLeverageUpdateDto } from "../models/AccountLeverageUpdateDto";
 import type { BatchCreateRequestDto } from "../models/BatchCreateRequestDto";
 import type { BatchDto } from "../models/BatchDto";
 import type { BatchUpdateDto } from "../models/BatchUpdateDto";
@@ -64,6 +65,52 @@ export class AccountService {
       query: {
         account_ids: accountIds,
       },
+      errors: {
+        422: `Validation Error`,
+      },
+    });
+  }
+  /**
+   * Accounts Leverages
+   * @returns number Successful Response
+   * @throws ApiError
+   */
+  public static accountsLeveragesApiBackpackAccountsLeveragesGet({
+    accountIds,
+  }: {
+    accountIds: Array<string>;
+  }): CancelablePromise<Record<string, number>> {
+    return __request(OpenAPI, {
+      method: "GET",
+      url: "/api/backpack/accounts/leverages",
+      query: {
+        account_ids: accountIds,
+      },
+      errors: {
+        422: `Validation Error`,
+      },
+    });
+  }
+  /**
+   * Accounts Update Leverages
+   * @returns void
+   * @throws ApiError
+   */
+  public static accountsUpdateLeveragesApiBackpackAccountsLeveragesPatch({
+    accountIds,
+    requestBody,
+  }: {
+    accountIds: Array<string>;
+    requestBody: AccountLeverageUpdateDto;
+  }): CancelablePromise<void> {
+    return __request(OpenAPI, {
+      method: "PATCH",
+      url: "/api/backpack/accounts/leverages",
+      query: {
+        account_ids: accountIds,
+      },
+      body: requestBody,
+      mediaType: "application/json",
       errors: {
         422: `Validation Error`,
       },

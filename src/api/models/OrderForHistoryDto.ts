@@ -6,7 +6,7 @@ import type { OrderSide } from "./OrderSide";
 import type { OrderType } from "./OrderType";
 export type OrderForHistoryDto = {
   symbol: string;
-  size: string;
+  size?: string | null;
   price?: string | null;
   order_type?: OrderType | null;
   side?: OrderSide | null;

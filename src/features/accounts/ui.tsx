@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CreateAccountModal } from './modals';
 import { AccountsTable } from './components/AccountsTable';
 import { AccountService } from '../../api';
@@ -45,6 +45,14 @@ export const Accounts = () => {
             deleteMutation.mutate(_);
         }
     };
+
+    useEffect(() => {
+        if (accounts.length > 0) {
+            AccountService.accountsUpdateLeveragesApiBackpackAccountsLeveragesPatch({ accountIds: accounts.map(account => account.id), requestBody: { leverage: 5 } }).then(() => {
+                AccountService.accountsLeveragesApiBackpackAccountsLeveragesGet({ accountIds: accounts.map(account => account.id) });
+            });
+        }
+    }, [accounts]);
 
     return (
         <>

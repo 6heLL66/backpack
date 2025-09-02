@@ -10,6 +10,7 @@ export type UnitDto = {
   limit_account_id: string;
   batch_id: string;
   size: string;
+  initial_size: string;
   timedelta: number;
   created_at: string;
   start_processing_at?: string | null;

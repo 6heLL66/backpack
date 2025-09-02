@@ -7,6 +7,7 @@ export { CancelablePromise, CancelError } from "./core/CancelablePromise";
 export { OpenAPI } from "./core/OpenAPI";
 export type { OpenAPIConfig } from "./core/OpenAPI";
 
+export type { AccountLeverageUpdateDto } from "./models/AccountLeverageUpdateDto";
 export type { BatchCreateRequestDto } from "./models/BatchCreateRequestDto";
 export type { BatchDto } from "./models/BatchDto";
 export type { BatchUpdateDto } from "./models/BatchUpdateDto";
@@ -28,6 +29,7 @@ export { OrderHistoryAction } from "./models/OrderHistoryAction";
 export type { OrderHistoryDto } from "./models/OrderHistoryDto";
 export { OrderSide } from "./models/OrderSide";
 export { OrderType } from "./models/OrderType";
+export type { PaginatedResponseDto_OrderHistoryDto_ } from "./models/PaginatedResponseDto_OrderHistoryDto_";
 export type { PositionDto } from "./models/PositionDto";
 export type { PriceFilterDto } from "./models/PriceFilterDto";
 export type { QuantityFilterDto } from "./models/QuantityFilterDto";
