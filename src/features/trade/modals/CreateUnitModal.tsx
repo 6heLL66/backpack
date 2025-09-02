@@ -48,7 +48,7 @@ export const CreateUnitModal = ({ isOpen, onClose, batchId, accounts, markets }:
             });
         },
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: ['units'] });
+            queryClient.invalidateQueries({ queryKey: ['active-units'] });
             onClose();
             setFormData({
                 symbol: '',
