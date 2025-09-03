@@ -98,7 +98,7 @@ export const PositionsModal: React.FC<PositionsModalProps> = ({
                             {parseFloat(position.netQuantity).toFixed(4)}
                         </span>
                         <span className="text-xs text-gray-400">
-                            ${parseFloat(position.netExposureNotional).toFixed(2)}
+                            ${parseFloat(position.netCost).toFixed(2)}
                         </span>
                     </div>
                 );
