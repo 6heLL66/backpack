@@ -87,7 +87,7 @@ export const DeletedUnitsTable: React.FC<DeletedUnitsTableProps> = ({
                 return (
                     <div className="flex flex-col">
                         <span className="text-gray-300">{unit.deleted_at ? formatDate(unit.deleted_at) : 'N/A'}</span>
-                        <span className="text-gray-500 text-xs">Deleted</span>
+                        <span className="text-gray-500 text-xs">{unit.deleted_at ? 'Deleted' : 'Still active'}</span>
                     </div>
                 );
             case 'actions':

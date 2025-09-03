@@ -68,7 +68,11 @@ export const BatchAccordion: React.FC<BatchAccordionProps> = ({
 
     const renderUnitCell = (unit: UnitDto, columnKey: React.Key, positions: Record<string, PositionDto[]>) => {
         const unitPositions = Object.values(positions).flat().filter(position => position.symbol === unit.symbol);
-        console.log(positions,Object.values(positions).flat())
+        const price = getPriceBySymbol(unit.symbol);
+        const sizeNum = parseFloat(unit.size);
+        const priceNum = price ? parseFloat(price) : 0;
+        const totalValue = sizeNum * priceNum;
+
         switch (columnKey) {
             case 'symbol':
                 return (
@@ -82,11 +86,6 @@ export const BatchAccordion: React.FC<BatchAccordionProps> = ({
                     </Chip>
                 );
             case 'size':
-                const price = getPriceBySymbol(unit.symbol);
-                const sizeNum = parseFloat(unit.size);
-                const priceNum = price ? parseFloat(price) : 0;
-                const totalValue = sizeNum * priceNum;
-                
                 return (
                     <div className="flex flex-col gap-1">
                         <span className="text-gray-200 font-medium">{unit.size}</span>

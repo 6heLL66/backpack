@@ -92,7 +92,7 @@ export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
                 return (
                     <div className="flex flex-col gap-2">
                         <Chip 
-                            color={getActionColor(item.action) as any}
+                            color={getActionColor(item.action)}
                             variant="flat" 
                             size="sm"
                             className="font-semibold"
@@ -262,8 +262,8 @@ export const UnitHistoryTable: React.FC<UnitHistoryTableProps> = ({
                         aria-label="Unit history table"
                         classNames={{
                             wrapper: "min-h-[400px]",
-                            th: "bg-gray-800/50 text-gray-300 border-b border-gray-700/50 px-6 py-4 font-semibold",
-                            td: "border-b border-gray-700/30 px-6 py-4",
+                            th: "bg-gray-800/50 text-gray-300 border-b border-gray-700/50 px-6 py-2 font-semibold",
+                            td: "border-b border-gray-700/30 px-6 py-2",
                             tr: "hover:bg-gray-700/20 transition-colors duration-200",
                             table: "min-w-full"
                         }}
