@@ -193,6 +193,7 @@ export const BatchAccordion: React.FC<BatchAccordionProps> = ({
                 positions={Object.values(positions).flat()}
                 orders={Object.values(orders ?? {}).flat()}
                 symbol={selectedSymbol}
+                unitId={batchUnits.find(unit => unit.symbol === selectedSymbol)?.id}
             />
         </div>
     );
